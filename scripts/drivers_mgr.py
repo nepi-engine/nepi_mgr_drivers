@@ -22,7 +22,7 @@ from nepi_edge_sdk_base import nepi_ros
 from nepi_edge_sdk_base import nepi_nex
 
 from std_msgs.msg import Empty, String, Int32, Bool, Header
-from nepi_ros_interfaces.msg import DriversStatus, DriverStatus, DriverUpdateState, DriverUpdateOrder, DriverUpdateOption, DriverUpdateMsg
+from nepi_ros_interfaces.msg import DriversStatus, DriverStatus, DriverUpdateState, DriverUpdateOrder, DriverUpdateOption #, DriverUpdateMsg
 from nepi_ros_interfaces.srv import SystemStorageFolderQuery, SystemStorageFolderQueryResponse
 
 from nepi_edge_sdk_base.save_cfg_if import SaveCfgIF
@@ -61,7 +61,7 @@ class NepiDriversMgr(object):
 
   discovery_active_dict = dict()
 
-  selected_driver = None:
+  selected_driver = "None"
     
 
   #################################################################
@@ -143,7 +143,7 @@ class NepiDriversMgr(object):
     rospy.Subscriber('~update_state', DriverUpdateState, self.updateStateCb)
     rospy.Subscriber('~update_order', DriverUpdateOrder, self.updateOrderCb)
     rospy.Subscriber('~update_option', DriverUpdateOption, self.updateOptionCb)
-    rospy.Subscriber('~update_msg', DriverUpdateMsg, self.updateMsgCb)
+    #rospy.Subscriber('~select_driver_status', DriverUpdateMsg, self.updateMsgCb)
 
     rospy.Subscriber('~install_driver_pkg', String, self.installDriverPkgCb)
     rospy.Subscriber('~remove_driver', String, self.removeDriverCb)
@@ -191,19 +191,19 @@ class NepiDriversMgr(object):
     nex_database = rospy.get_param("~nex_database",self.init_nex_database)
     status_drivers_msg = DriversStatus()
     status_drivers_msg.drivers_path = self.drivers_folder
-    status_drivers_msg.drivers_ordered_list = self.drivers_ordered_list
+    status_drivers_msg.drivers_ordered_list = str(self.drivers_ordered_list)
     status_drivers_msg.drivers_active_path = self.drivers_active_folder
-    status_drivers_msg.drivers_active_list = self.drivers_active_list 
+    status_drivers_msg.drivers_active_list = str(self.drivers_active_list)
     status_drivers_msg.drivers_install_path = self.drivers_install_folder
-    status_drivers_msg.drivers_install_list = self.drivers_install_files
+    status_drivers_msg.drivers_install_list = str(self.drivers_install_files)
+    status_drivers_msg.selected_driver = self.selected_driver
     return status_drivers_msg
 
   
   def publish_driver_status(self):
-    self.last_status_drivers_msg = self.status_drivers_msg
-    self.status_drivers_msg = self.getDriversStatusMsg()
+    self.status_driver_msg = self.getDriverStatusMsg()
     if not rospy.is_shutdown():
-      self.driver_status_pub.publish(self.status_drivers_msg)
+      self.driver_status_pub.publish(self.status_driver_msg)
 
 
   def getDriverStatusMsg(self):
@@ -215,11 +215,11 @@ class NepiDriversMgr(object):
       status_driver_msg.name = driver_name
       status_driver_msg.group = driver['group']
       status_driver_msg.group_id  = driver['group_id']
-      status_driver_msg.interfaces  = driver['driver_interfaces']
-      status_driver_msg.options  = driver['driver_options']
+      status_driver_msg.interfaces  = str(driver['driver_interfaces'])
+      status_driver_msg.options  = str(driver['driver_options'])
       status_driver_msg.set_option  = driver['driver_set_option']
       status_driver_msg.discovery = driver['discovery_method']
-      status_driver_msg.other_users_list  = driver['users']
+      status_driver_msg.other_users_list  = str(driver['users'])
       status_driver_msg.active_state  = driver['active']
       status_driver_msg.order  = driver['order']
       status_driver_msg.msg_str = driver['msg']
@@ -365,6 +365,7 @@ class NepiDriversMgr(object):
   def selectDriverCb(self,msg):
     self.publishMsg(msg)
     driver_name = msg.data
+    nex_database = rospy.get_param("~nex_database",self.init_nex_database)
     if driver_name in nex_database.keys():
       self.selected_driver = driver_name
     self.publish_status()
