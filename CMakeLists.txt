@@ -162,7 +162,7 @@ catkin_package(
 #)
 
 catkin_install_python(PROGRAMS
-  scripts/driver_mgr.py
+  scripts/drivers_mgr.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
